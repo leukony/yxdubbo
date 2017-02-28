@@ -20,6 +20,7 @@ import com.alibaba.dubbo.common.extension.Adaptive;
 import com.alibaba.dubbo.common.extension.SPI;
 
 /**
+ *
  * @author ding.lid
  */
 @SPI("impl1")

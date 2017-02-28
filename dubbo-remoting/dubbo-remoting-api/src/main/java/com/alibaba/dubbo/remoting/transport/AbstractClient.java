@@ -40,7 +40,7 @@ import com.alibaba.dubbo.remoting.Channel;
 import com.alibaba.dubbo.remoting.ChannelHandler;
 import com.alibaba.dubbo.remoting.Client;
 import com.alibaba.dubbo.remoting.RemotingException;
-import com.alibaba.dubbo.remoting.transport.dispatcher.ChannelHandlers;
+import com.alibaba.dubbo.remoting.transport.dispather.ChannelHandlers;
 
 /**
  * AbstractClient
@@ -109,7 +109,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                 close();
                 throw t;
             } else {
-                logger.warn("Failed to start " + getClass().getSimpleName() + " " + NetUtils.getLocalAddress()
+                logger.error("Failed to start " + getClass().getSimpleName() + " " + NetUtils.getLocalAddress()
                              + " connect to the server " + getRemoteAddress() + " (check == false, ignore and retry later!), cause: " + t.getMessage(), t);
             }
         } catch (Throwable t){

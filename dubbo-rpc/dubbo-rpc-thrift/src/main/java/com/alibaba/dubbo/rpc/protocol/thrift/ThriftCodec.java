@@ -14,16 +14,17 @@
 package com.alibaba.dubbo.rpc.protocol.thrift;
 
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.alibaba.dubbo.common.Constants;
+import com.alibaba.dubbo.common.extension.ExtensionLoader;
+import com.alibaba.dubbo.common.utils.ClassHelper;
+import com.alibaba.dubbo.remoting.Channel;
+import com.alibaba.dubbo.remoting.Codec;
+import com.alibaba.dubbo.remoting.exchange.Request;
+import com.alibaba.dubbo.remoting.exchange.Response;
+import com.alibaba.dubbo.rpc.RpcException;
+import com.alibaba.dubbo.rpc.RpcInvocation;
+import com.alibaba.dubbo.rpc.RpcResult;
+import com.alibaba.dubbo.rpc.protocol.thrift.io.RandomAccessByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TBase;
@@ -36,19 +37,17 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TIOStreamTransport;
 
-import com.alibaba.dubbo.common.Constants;
-import com.alibaba.dubbo.common.extension.ExtensionLoader;
-import com.alibaba.dubbo.common.utils.ClassHelper;
-import com.alibaba.dubbo.remoting.Channel;
-import com.alibaba.dubbo.remoting.Codec2;
-import com.alibaba.dubbo.remoting.buffer.ChannelBuffer;
-import com.alibaba.dubbo.remoting.buffer.ChannelBufferInputStream;
-import com.alibaba.dubbo.remoting.exchange.Request;
-import com.alibaba.dubbo.remoting.exchange.Response;
-import com.alibaba.dubbo.rpc.RpcException;
-import com.alibaba.dubbo.rpc.RpcInvocation;
-import com.alibaba.dubbo.rpc.RpcResult;
-import com.alibaba.dubbo.rpc.protocol.thrift.io.RandomAccessByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Thrift framed protocol codec.
@@ -71,7 +70,7 @@ import com.alibaba.dubbo.rpc.protocol.thrift.io.RandomAccessByteArrayOutputStrea
  *
  * @author <a href="mailto:gang.lvg@alibaba-inc.com">gang.lvg</a>
  */
-public class ThriftCodec implements Codec2 {
+public class ThriftCodec implements Codec {
 
     private static final AtomicInteger THRIFT_SEQ_ID = new AtomicInteger( 0 );
 
@@ -95,14 +94,14 @@ public class ThriftCodec implements Codec2 {
 
     public static final short MAGIC = (short) 0xdabc;
 
-    public void encode( Channel channel, ChannelBuffer buffer, Object message )
+    public void encode( Channel channel, OutputStream output, Object message )
             throws IOException {
 
         if ( message instanceof Request ) {
-            encodeRequest( channel, buffer, ( Request ) message );
+            encodeRequest( channel, output, ( Request ) message );
         }
         else if ( message instanceof Response ) {
-            encodeResponse( channel, buffer, ( Response ) message );
+            encodeResponse( channel, output, ( Response ) message );
         } else {
             throw new UnsupportedOperationException(
                     new StringBuilder( 32 )
@@ -115,17 +114,17 @@ public class ThriftCodec implements Codec2 {
 
     }
 
-    public Object decode( Channel channel, ChannelBuffer buffer ) throws IOException {
+    public Object decode( Channel channel, InputStream input ) throws IOException {
 
-        int available = buffer.readableBytes();
+        int available = input.available();
 
         if ( available < MESSAGE_SHORTEST_LENGTH ) {
 
-            return DecodeResult.NEED_MORE_INPUT;
+            return Codec.NEED_MORE_INPUT;
 
         } else {
 
-            TIOStreamTransport transport = new TIOStreamTransport( new ChannelBufferInputStream(buffer));
+            TIOStreamTransport transport = new TIOStreamTransport( input );
 
             TBinaryProtocol protocol = new TBinaryProtocol( transport );
 
@@ -151,7 +150,7 @@ public class ThriftCodec implements Codec2 {
                                 .toString() );
             }
 
-            if ( available < messageLength ) { return  DecodeResult.NEED_MORE_INPUT; }
+            if ( available < messageLength ) { return  NEED_MORE_INPUT; }
 
             return decode( protocol );
 
@@ -391,7 +390,7 @@ public class ThriftCodec implements Codec2 {
 
     }
 
-    private void encodeRequest( Channel channel, ChannelBuffer buffer, Request request )
+    private void encodeRequest( Channel channel, OutputStream output, Request request )
             throws IOException {
 
         RpcInvocation inv = ( RpcInvocation ) request.getData();
@@ -525,12 +524,13 @@ public class ThriftCodec implements Codec2 {
             throw new RpcException( RpcException.SERIALIZATION_EXCEPTION, e.getMessage(), e );
         }
 
-        buffer.writeBytes(bytes);
-        buffer.writeBytes(bos.toByteArray());
+        output.write( bytes );
+        bos.writeTo( output );
+        output.flush();
 
     }
 
-    private void encodeResponse( Channel channel, ChannelBuffer buffer, Response response )
+    private void encodeResponse( Channel channel, OutputStream output, Response response )
             throws IOException {
 
         RpcResult result = ( RpcResult ) response.getResult();
@@ -687,8 +687,9 @@ public class ThriftCodec implements Codec2 {
             throw new RpcException( RpcException.SERIALIZATION_EXCEPTION, e.getMessage(), e );
         }
 
-        buffer.writeBytes(bytes);
-        buffer.writeBytes(bos.toByteArray());
+        output.write( bytes );
+        bos.writeTo( output );
+        output.flush();
 
     }
 

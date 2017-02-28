@@ -1,6 +1,5 @@
 package com.alibaba.dubbo.remoting.transport;
 
-import com.alibaba.dubbo.remoting.exchange.support.MultiMessage;
 import com.alibaba.dubbo.remoting.Channel;
 import com.alibaba.dubbo.remoting.ChannelHandler;
 import com.alibaba.dubbo.remoting.RemotingException;
@@ -8,7 +7,6 @@ import com.alibaba.dubbo.remoting.exchange.support.MultiMessage;
 
 /**
  * @author <a href="mailto:gang.lvg@alibaba-inc.com">kimi</a>
- * @see MultiMessage
  */
 public class MultiMessageHandler extends AbstractChannelHandlerDelegate {
 

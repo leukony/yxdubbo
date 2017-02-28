@@ -369,6 +369,10 @@ public class ExtensionLoader<T> {
     public void addExtension(String name, Class<?> clazz) {
         getExtensionClasses(); // load classes
 
+        if(cachedClasses.get().containsKey(name)) {
+            throw new IllegalStateException("Extension name " +
+                   name + " already existed(Extension " + type + ")!");
+        }
         if(!type.isAssignableFrom(clazz)) {
             throw new IllegalStateException("Input type " +
                     clazz + "not implement Extension " + type);
@@ -377,26 +381,8 @@ public class ExtensionLoader<T> {
             throw new IllegalStateException("Input type " +
                     clazz + "can not be interface!");
         }
-
-        if(!clazz.isAnnotationPresent(Adaptive.class)) {
-            if(StringUtils.isBlank(name)) {
-                throw new IllegalStateException("Extension name is blank (Extension " + type + ")!");
-            }
-            if(cachedClasses.get().containsKey(name)) {
-                throw new IllegalStateException("Extension name " +
-                        name + " already existed(Extension " + type + ")!");
-            }
-
-            cachedNames.put(clazz, name);
-            cachedClasses.get().put(name, clazz);
-        }
-        else {
-            if(cachedAdaptiveClass != null) {
-                throw new IllegalStateException("Adaptive Extension already existed(Extension " + type + ")!");
-            }
-
-            cachedAdaptiveClass = clazz;
-        }
+        cachedNames.put(clazz, name);
+        cachedClasses.get().put(name, clazz);
     }
 
     /**
@@ -411,6 +397,10 @@ public class ExtensionLoader<T> {
     public void replaceExtension(String name, Class<?> clazz) {
         getExtensionClasses(); // load classes
 
+        if(!cachedClasses.get().containsKey(name)) {
+            throw new IllegalStateException("Extension name " +
+                    name + " not existed(Extension " + type + ")!");
+        }
         if(!type.isAssignableFrom(clazz)) {
             throw new IllegalStateException("Input type " +
                     clazz + "not implement Extension " + type);
@@ -420,27 +410,9 @@ public class ExtensionLoader<T> {
                     clazz + "can not be interface!");
         }
 
-        if(!clazz.isAnnotationPresent(Adaptive.class)) {
-            if(StringUtils.isBlank(name)) {
-                throw new IllegalStateException("Extension name is blank (Extension " + type + ")!");
-            }
-            if(!cachedClasses.get().containsKey(name)) {
-                throw new IllegalStateException("Extension name " +
-                        name + " not existed(Extension " + type + ")!");
-            }
-
-            cachedNames.put(clazz, name);
-            cachedClasses.get().put(name, clazz);
-            cachedInstances.remove(name);
-        }
-        else {
-            if(cachedAdaptiveClass == null) {
-                throw new IllegalStateException("Adaptive Extension not existed(Extension " + type + ")!");
-            }
-
-            cachedAdaptiveClass = clazz;
-            cachedAdaptiveInstance.set(null);
-        }
+        cachedNames.put(clazz, name);
+        cachedClasses.get().put(name, clazz);
+        cachedInstances.remove(name);
     }
 
     @SuppressWarnings("unchecked")
@@ -931,7 +903,7 @@ public class ExtensionLoader<T> {
                     if (i > 0) {
                         codeBuidler.append(", ");
                     }
-                    codeBuidler.append(ets[i].getCanonicalName());
+                    codeBuidler.append(pts[i].getCanonicalName());
                 }
             }
             codeBuidler.append(" {");

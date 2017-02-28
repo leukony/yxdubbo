@@ -28,7 +28,7 @@ import org.junit.Test;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.remoting.Channel;
 import com.alibaba.dubbo.remoting.RemotingException;
-import com.alibaba.dubbo.remoting.transport.dispatcher.WrappedChannelHandler;
+import com.alibaba.dubbo.remoting.transport.dispather.WrappedChannelHandler;
 
 public class WrappedChannelHandlerTest {
     WrappedChannelHandler handler ;

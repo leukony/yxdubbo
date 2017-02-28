@@ -295,10 +295,6 @@ public class Constants {
     public static final String  PID_KEY                            = "pid";
 
     public static final String  TIMESTAMP_KEY                      = "timestamp";
-    
-    public static final String  WARMUP_KEY                         = "warmup";
-
-    public static final int     DEFAULT_WARMUP                     = 10 * 60 * 1000;
 
     public static final String  CHECK_KEY                          = "check";
 
@@ -328,7 +324,7 @@ public class Constants {
 
     public static final String  HESSIAN_VERSION_KEY                = "hessian.version";
 
-    public static final String  DISPATCHER_KEY                     = "dispatcher";
+    public static final String  DISPATHER_KEY                      = "dispather";
 
     public static final String  CHANNEL_HANDLER_KEY                = "channel.handler";
 
@@ -396,6 +392,38 @@ public class Constants {
     public static final String  FORCE_KEY                          = "force";
 
     public static final String  MERGER_KEY                         = "merger";
+
+    /**
+     * invoker是否连接的，针对RegistryDirectory Join的Invoker有意义。没有连接Invoker的INSIDE_INVOKERS不会更新。
+     */
+    public static final String INVOKER_CONNECTED_KEY               = "connected";
+
+    /**
+     * 内部invoker，组合的Invoker
+     */
+    public static final String INVOKER_INSIDE_INVOKERS_KEY         = "inside.invokers";
+
+    /**
+     * 内部invoker数，组合的Invoker
+     */
+    public static final String INVOKER_INSIDE_INVOKER_COUNT_KEY    = "inside.invoker.count";
+
+    /**
+     * Switch cluster
+     * see SwitchCluster
+     */
+    public static final String CLUSTER_SWITCH_FACTOR               = "cluster.switch.factor";
+
+    /**
+     * log error when Switch cluster
+     * see SwitchCluster
+     */
+    public static final String CLUSTER_SWITCH_LOG_ERROR            = "cluster.switch.log.error";
+
+    /**
+     * default Switch cluster factor
+     */
+    public static final double DEFAULT_CLUSTER_SWITCH_FACTOR       = 2;
 
     /**
      * 集群时是否排除非available的invoker
@@ -576,8 +604,6 @@ public class Constants {
     public static final String GENERIC_SERIALIZATION_NATIVE_JAVA   = "nativejava";
 
     public static final String GENERIC_SERIALIZATION_DEFAULT       = "true";
-
-    public static final String GENERIC_SERIALIZATION_BEAN          = "bean";
 
     /*
      * private Constants(){ }

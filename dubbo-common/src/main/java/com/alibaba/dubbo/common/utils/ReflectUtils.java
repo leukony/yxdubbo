@@ -261,9 +261,6 @@ public final class ReflectUtils {
                 return (Class<?>) ((ParameterizedType) genericClass).getRawType();
             } else if (genericClass instanceof GenericArrayType) { // 处理数组泛型
                 return (Class<?>) ((GenericArrayType) genericClass).getGenericComponentType();
-            } else if (((Class)genericClass).isArray()) {
-                // 在 JDK 7 以上的版本, Foo<int[]> 不再是 GenericArrayType
-                return ((Class)genericClass).getComponentType();
             } else {
                 return (Class<?>) genericClass;
             }
@@ -787,9 +784,9 @@ public final class ReflectUtils {
 	 */
 	public static Method findMethodByMethodSignature(Class<?> clazz, String methodName, String[] parameterTypes)
 	        throws NoSuchMethodException, ClassNotFoundException {
-	    String signature = clazz.getName() + "." + methodName;
+	    String signature = methodName;
         if(parameterTypes != null && parameterTypes.length > 0){
-            signature += StringUtils.join(parameterTypes);
+            signature = methodName + StringUtils.join(parameterTypes);
         }
         Method method = Signature_METHODS_CACHE.get(signature);
         if(method != null){
@@ -948,8 +945,7 @@ public final class ReflectUtils {
             && method.getReturnType() != void.class
             && method.getDeclaringClass() != Object.class
             && method.getParameterTypes().length == 0
-            && ((method.getName().startsWith("get") && method.getName().length() > 3)
-                    || (method.getName().startsWith("is") && method.getName().length() > 2));
+            && (method.getName().startsWith("get") || method.getName().startsWith("is"));
     }
 
     public static String getPropertyNameFromBeanReadMethod(Method method) {
@@ -972,8 +968,7 @@ public final class ReflectUtils {
             && ! Modifier.isStatic(method.getModifiers())
             && method.getDeclaringClass() != Object.class
             && method.getParameterTypes().length == 1
-            && method.getName().startsWith("set")
-            && method.getName().length() > 3;
+            && method.getName().startsWith("set");
     }
     
     public static String getPropertyNameFromBeanWriteMethod(Method method) {
@@ -989,41 +984,6 @@ public final class ReflectUtils {
             && !Modifier.isStatic(field.getModifiers())
             && !Modifier.isFinal(field.getModifiers())
             && !field.isSynthetic();
-    }
-
-    public static Map<String, Field> getBeanPropertyFields(Class cl) {
-        Map<String, Field> properties = new HashMap<String, Field>();
-        for(; cl != null; cl = cl.getSuperclass()) {
-            Field[] fields = cl.getDeclaredFields();
-            for(Field field : fields) {
-                if (Modifier.isTransient(field.getModifiers())
-                    || Modifier.isStatic(field.getModifiers())) {
-                    continue;
-                }
-
-                field.setAccessible(true);
-
-                properties.put(field.getName(), field);
-            }
-        }
-
-        return properties;
-    }
-
-    public static Map<String, Method> getBeanPropertyReadMethods(Class cl) {
-        Map<String, Method> properties = new HashMap<String, Method>();
-        for(; cl != null; cl = cl.getSuperclass()) {
-            Method[] methods = cl.getDeclaredMethods();
-            for(Method method : methods) {
-                if (isBeanPropertyReadMethod(method)) {
-                    method.setAccessible(true);
-                    String property = getPropertyNameFromBeanReadMethod(method);
-                    properties.put(property, method);
-                }
-            }
-        }
-
-        return properties;
     }
 
 	private ReflectUtils(){}

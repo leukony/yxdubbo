@@ -51,11 +51,45 @@ public class RouteServiceImpl extends AbstractService implements RouteService {
         registryService.register(route.toUrl());
     }
 
+    /*
     public void deleteRoute(Long id) {
         URL oldRoute = findRouteUrl(id);
         if(oldRoute == null) {
             throw new IllegalStateException("Route was changed!");
         }
+        registryService.unregister(oldRoute);
+    }
+    */
+    
+    public void deleteRoute(Long id) {
+        URL oldRoute = findRouteUrl(id);
+        if(oldRoute == null) {
+            throw new IllegalStateException("Route was changed!");
+        }
+        
+        Route route = findRoute(id);
+        
+        String group = null;
+        String version = null;
+        String path = route.getService();
+        int i = path.indexOf("/");
+        if (i > 0) {
+            group = path.substring(0, i);
+            path = path.substring(i + 1);
+        }
+        i = path.lastIndexOf(":");
+        if (i > 0) {
+            version = path.substring(i + 1);
+            path = path.substring(0, i);
+        }
+        URL oldRouter1 = URL.valueOf(Constants.ROUTE_PROTOCOL + "://" + Constants.ANYHOST_VALUE + "/" + path 
+                + "?" + Constants.CATEGORY_KEY + "=" + Constants.ROUTERS_CATEGORY 
+                + "&router=condition&runtime=false&priority=" + route.getPriority() + "&force=" + route.isForce() + "&dynamic=false"
+                + "&name=" + route.getName() + "&" + Constants.RULE_KEY + "=" + URL.encode(route.getMatchRule() + " => " + route.getFilterRule())
+                + (group == null ? "" : "&" + Constants.GROUP_KEY + "=" + group)
+                + (version == null ? "" : "&" + Constants.VERSION_KEY + "=" + version));
+
+        registryService.unregister(oldRouter1);
         registryService.unregister(oldRoute);
     }
 
@@ -72,8 +106,8 @@ public class RouteServiceImpl extends AbstractService implements RouteService {
             return;
         }
 
-		registryService.unregister(oldRoute);
-        URL newRoute= oldRoute.addParameter("enabled", true);
+        registryService.unregister(oldRoute);
+        URL newRoute = oldRoute.addParameter("enabled", true);
         registryService.register(newRoute);
         
     }

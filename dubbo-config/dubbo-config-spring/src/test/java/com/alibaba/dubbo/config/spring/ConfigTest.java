@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.containsString;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.junit.Test;
@@ -31,7 +30,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
 import com.alibaba.dubbo.common.utils.NetUtils;
@@ -51,15 +49,12 @@ import com.alibaba.dubbo.config.spring.api.HelloService;
 import com.alibaba.dubbo.config.spring.filter.MockFilter;
 import com.alibaba.dubbo.config.spring.impl.DemoServiceImpl;
 import com.alibaba.dubbo.config.spring.impl.HelloServiceImpl;
-import com.alibaba.dubbo.config.spring.registry.MockRegistry;
-import com.alibaba.dubbo.config.spring.registry.MockRegistryFactory;
-import com.alibaba.dubbo.registry.Registry;
-import com.alibaba.dubbo.registry.RegistryFactory;
 import com.alibaba.dubbo.registry.RegistryService;
 import com.alibaba.dubbo.rpc.Exporter;
 import com.alibaba.dubbo.rpc.Filter;
 import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.RpcException;
+import com.alibaba.dubbo.rpc.service.EchoService;
 import com.alibaba.dubbo.rpc.service.GenericException;
 import com.alibaba.dubbo.rpc.service.GenericService;
 
@@ -426,7 +421,30 @@ public class ConfigTest {
             providerContext.close();
         }
     }
-    
+
+
+    @Test
+    public void test_invokerEchoOfGenericService() throws Exception {
+        ClassPathXmlApplicationContext providerContext = new ClassPathXmlApplicationContext(
+                ConfigTest.class.getPackage().getName().replace('.', '/') + "/demo-provider.xml");
+        providerContext.start();
+
+        ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext(
+                ConfigTest.class.getPackage().getName().replace('.', '/')
+                        + "/reference-generic-echo.xml");
+
+        DemoService demoService = (DemoService)ctx.getBean("demoService");
+        GenericService genericService = (GenericService)ctx.getBean("genericService");
+        {
+            String hello = demoService.sayName("Hello");
+            assertEquals("say:Hello", hello);
+        }
+        {
+            String hello = (String) ((EchoService)genericService).$echo("Hello");
+            assertEquals("Hello", hello);
+        }
+    }
+
     // BUG: DUBBO-846 2.0.9中，服务方法上的retry="false"设置失效
     @Test
     public void test_retrySettingFail() throws Exception {
@@ -922,6 +940,7 @@ public class ConfigTest {
         sc.setInterface(DemoService.class.getName());
         sc.setRef(new GenericService() {
 
+            @Override
             public Object $invoke(String method, String[] parameterTypes, Object[] args) throws GenericException {
                 return null;
             }
@@ -941,44 +960,6 @@ public class ConfigTest {
         } finally {
             sc.unexport();
             ref.destroy();
-        }
-    }
-
-    @Test
-    public void testGenericServiceConfig() throws Exception {
-        ServiceConfig<GenericService> service = new ServiceConfig<GenericService>();
-        service.setApplication(new ApplicationConfig("test"));
-        service.setRegistry(new RegistryConfig("mock://localhost"));
-        service.setInterface(DemoService.class.getName());
-        service.setGeneric(Constants.GENERIC_SERIALIZATION_BEAN);
-        service.setRef(new GenericService(){
-
-            public Object $invoke(String method, String[] parameterTypes, Object[] args) throws GenericException {
-                return null;
-            }
-        });
-        try {
-            service.export();
-            Collection<Registry> collection = MockRegistryFactory.getCachedRegistry();
-            MockRegistry registry = (MockRegistry)collection.iterator().next();
-            URL url = registry.getRegistered().get(0);
-            Assert.assertEquals(Constants.GENERIC_SERIALIZATION_BEAN, url.getParameter(Constants.GENERIC_KEY));
-        } finally {
-            MockRegistryFactory.cleanCachedRegistry();
-            service.unexport();
-        }
-    }
-
-    @Test
-    public void testGenericServiceConfigThroughSpring() throws Exception {
-        ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext(ConfigTest.class.getPackage().getName().replace('.', '/') + "/generic-export.xml");
-        try {
-            ctx.start();
-            ServiceConfig serviceConfig = (ServiceConfig) ctx.getBean("dubboDemoService");
-            URL url = (URL)serviceConfig.getExportedUrls().get(0);
-            Assert.assertEquals(Constants.GENERIC_SERIALIZATION_BEAN, url.getParameter(Constants.GENERIC_KEY));
-        } finally {
-            ctx.destroy();
         }
     }
 

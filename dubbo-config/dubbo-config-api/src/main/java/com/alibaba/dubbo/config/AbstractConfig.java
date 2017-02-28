@@ -35,7 +35,7 @@ import com.alibaba.dubbo.common.utils.StringUtils;
 import com.alibaba.dubbo.config.support.Parameter;
 
 /**
- * 配置解析的工具方法、公共方法
+ * AbstractConfig
  * 
  * @author william.liangf
  * @export

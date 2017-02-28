@@ -13,8 +13,17 @@
  */
 package com.alibaba.dubbo.rpc.protocol.thrift;
 
-import java.io.ByteArrayInputStream;
-
+import com.alibaba.dubbo.common.Constants;
+import com.alibaba.dubbo.common.URL;
+import com.alibaba.dubbo.remoting.Channel;
+import com.alibaba.dubbo.remoting.exchange.Request;
+import com.alibaba.dubbo.remoting.exchange.Response;
+import com.alibaba.dubbo.remoting.exchange.support.DefaultFuture;
+import com.alibaba.dubbo.rpc.RpcException;
+import com.alibaba.dubbo.rpc.RpcInvocation;
+import com.alibaba.dubbo.rpc.RpcResult;
+import com.alibaba.dubbo.rpc.gen.thrift.Demo;
+import com.alibaba.dubbo.rpc.protocol.thrift.io.RandomAccessByteArrayOutputStream;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMessage;
@@ -25,19 +34,8 @@ import org.apache.thrift.transport.TTransport;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.alibaba.dubbo.common.Constants;
-import com.alibaba.dubbo.common.URL;
-import com.alibaba.dubbo.remoting.Channel;
-import com.alibaba.dubbo.remoting.buffer.ChannelBuffer;
-import com.alibaba.dubbo.remoting.buffer.ChannelBuffers;
-import com.alibaba.dubbo.remoting.exchange.Request;
-import com.alibaba.dubbo.remoting.exchange.Response;
-import com.alibaba.dubbo.remoting.exchange.support.DefaultFuture;
-import com.alibaba.dubbo.rpc.RpcException;
-import com.alibaba.dubbo.rpc.RpcInvocation;
-import com.alibaba.dubbo.rpc.RpcResult;
-import com.alibaba.dubbo.rpc.gen.thrift.Demo;
-import com.alibaba.dubbo.rpc.protocol.thrift.io.RandomAccessByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 /**
  * @author <a href="mailto:gang.lvg@alibaba-inc.com">gang.lvg</a>
@@ -52,12 +50,11 @@ public class ThriftCodecTest {
 
         Request request = createRequest();
 
-        ChannelBuffer output = ChannelBuffers.dynamicBuffer(1024);
+        ByteArrayOutputStream output = new ByteArrayOutputStream( 1024 );
 
         codec.encode( channel, output, request );
 
-        byte[] bytes = new byte[output.readableBytes()];
-        output.readBytes(bytes);
+        byte[] bytes = output.toByteArray();
 
         ByteArrayInputStream bis = new ByteArrayInputStream( bytes );
 
@@ -164,7 +161,7 @@ public class ThriftCodecTest {
         byte[] buf = new byte[ 4 + bos.size()];
         System.arraycopy( bos.toByteArray(), 0, buf, 4, bos.size() );
 
-        ChannelBuffer bis = ChannelBuffers.wrappedBuffer(buf);
+        ByteArrayInputStream bis = new ByteArrayInputStream( buf );
 
         Object obj = codec.decode( ( Channel ) null, bis );
 
@@ -234,7 +231,7 @@ public class ThriftCodecTest {
         }
         // prepare
 
-        ChannelBuffer bis = ChannelBuffers.wrappedBuffer(encodeFrame(bos.toByteArray()));
+        ByteArrayInputStream bis = new ByteArrayInputStream( encodeFrame( bos.toByteArray() ) );
 
         Object obj = codec.decode( ( Channel ) null, bis );
 
@@ -269,15 +266,15 @@ public class ThriftCodecTest {
         Response response = new Response();
         response.setResult( rpcResult );
         response.setId( request.getId() );
-        ChannelBuffer bos = ChannelBuffers.dynamicBuffer(1024);
+        RandomAccessByteArrayOutputStream bos = new RandomAccessByteArrayOutputStream( 1024 );
 
         ThriftCodec.RequestData rd = ThriftCodec.RequestData.create(
                 ThriftCodec.getSeqId(), Demo.Iface.class.getName(), "echoString" );
         ThriftCodec.cachedRequest.putIfAbsent( request.getId(), rd );
         codec.encode( channel, bos, response );
 
-        byte[] buf = new byte[bos.writerIndex() - 4];
-        System.arraycopy( bos.array(), 4, buf, 0, bos.writerIndex() - 4 );
+        byte[] buf = new byte[bos.size() - 4];
+        System.arraycopy( bos.toByteArray(), 4, buf, 0, bos.size() - 4 );
 
         ByteArrayInputStream bis = new ByteArrayInputStream( buf );
 
@@ -289,7 +286,7 @@ public class ThriftCodecTest {
         TBinaryProtocol protocol = new TBinaryProtocol( transport );
 
         Assert.assertEquals( ThriftCodec.MAGIC, protocol.readI16() );
-        Assert.assertEquals( protocol.readI32() + 4, bos.writerIndex() );
+        Assert.assertEquals( protocol.readI32() + 4, bos.toByteArray().length );
         int headerLength = protocol.readI16();
 
         Assert.assertEquals( ThriftCodec.VERSION, protocol.readByte() );
@@ -309,7 +306,7 @@ public class ThriftCodecTest {
         result.read( protocol );
         protocol.readMessageEnd();
 
-        Assert.assertEquals( rpcResult.getValue(), result.getSuccess() );
+        Assert.assertEquals( rpcResult.getResult(), result.getSuccess() );
     }
 
     @Test
@@ -328,15 +325,15 @@ public class ThriftCodecTest {
         Response response = new Response();
         response.setResult( rpcResult );
         response.setId( request.getId() );
-        ChannelBuffer bos = ChannelBuffers.dynamicBuffer(1024);
+        RandomAccessByteArrayOutputStream bos = new RandomAccessByteArrayOutputStream( 1024 );
 
         ThriftCodec.RequestData rd = ThriftCodec.RequestData.create(
                 ThriftCodec.getSeqId(), Demo.Iface.class.getName(), "echoString" );
         ThriftCodec.cachedRequest.put( request.getId(), rd );
         codec.encode( channel, bos, response );
 
-        byte[] buf = new byte[bos.writerIndex() - 4];
-        System.arraycopy( bos.array(), 4, buf, 0, bos.writerIndex() - 4 );
+        byte[] buf = new byte[bos.size() - 4];
+        System.arraycopy( bos.toByteArray(), 4, buf, 0, bos.size() - 4 );
         ByteArrayInputStream bis = new ByteArrayInputStream( buf);
 
         if ( bis.markSupported() ) {
@@ -347,7 +344,7 @@ public class ThriftCodecTest {
         TBinaryProtocol protocol = new TBinaryProtocol( transport );
 
         Assert.assertEquals( ThriftCodec.MAGIC, protocol.readI16() );
-        Assert.assertEquals( protocol.readI32() + 4, bos.writerIndex() );
+        Assert.assertEquals( protocol.readI32() + 4, bos.toByteArray().length );
         int headerLength = protocol.readI16();
 
         Assert.assertEquals( ThriftCodec.VERSION, protocol.readByte() );
@@ -413,8 +410,8 @@ public class ThriftCodecTest {
             bos.setWriteIndex( oldIndex );
         }
 
-        Object obj = codec.decode( ( Channel ) null, ChannelBuffers.wrappedBuffer(
-            encodeFrame(bos.toByteArray())) );
+        Object obj = codec.decode( ( Channel ) null, new ByteArrayInputStream(
+                encodeFrame( bos.toByteArray() ) ) );
 
         Assert.assertTrue( obj instanceof Request );
 
