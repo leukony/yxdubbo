@@ -183,8 +183,8 @@ public class DubboProtocol extends AbstractProtocol {
          * @return
          */
         private com.yunxi.common.tracer.context.RpcContext startProcessWithTracer(ExchangeChannel channel, Invocation invocation, Invoker<?> invoker, com.yunxi.common.tracer.tracer.RpcTracer rpcTracer) {
-            String traceId = RpcContext.getContext().getAttachment(com.yunxi.common.tracer.constants.TracerConstants.TRACE_ID);
-            String rpcId = RpcContext.getContext().getAttachment(com.yunxi.common.tracer.constants.TracerConstants.RPC_ID);
+            String traceId = invocation.getAttachment(com.yunxi.common.tracer.constants.TracerConstants.TRACE_ID);
+            String rpcId = invocation.getAttachment(com.yunxi.common.tracer.constants.TracerConstants.RPC_ID);
             
             Map<String, String> tracerContext = null;
             if (traceId != null && traceId.length() > 0 && rpcId != null && rpcId.length() > 0) {
