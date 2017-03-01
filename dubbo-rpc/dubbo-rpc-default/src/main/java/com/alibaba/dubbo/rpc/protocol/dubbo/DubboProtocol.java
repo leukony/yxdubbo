@@ -15,10 +15,12 @@
  */
 package com.alibaba.dubbo.rpc.protocol.dubbo;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,10 +46,12 @@ import com.alibaba.dubbo.rpc.Exporter;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.Protocol;
+import com.alibaba.dubbo.rpc.Result;
 import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.RpcException;
 import com.alibaba.dubbo.rpc.RpcInvocation;
 import com.alibaba.dubbo.rpc.protocol.AbstractProtocol;
+import com.alibaba.dubbo.rpc.support.RpcUtils;
 
 /**
  * dubbo protocol support.
@@ -105,7 +109,17 @@ public class DubboProtocol extends AbstractProtocol {
                     }
                 }
                 RpcContext.getContext().setRemoteAddress(channel.getRemoteAddress());
-                return invoker.invoke(inv);
+                
+                com.yunxi.common.tracer.tracer.RpcTracer rpcTracer = com.yunxi.common.tracer.TracerFactory.getRpcServerTracer();
+                String rpcCode = com.yunxi.common.tracer.constants.RpcCode.RPC_BIZ_FAILED.getCode();
+                try {
+                    startProcessWithTracer(channel, inv, rpcTracer);
+                    Result result = invoker.invoke(inv);
+                    rpcCode = com.yunxi.common.tracer.constants.RpcCode.RPC_SUCCESS.getCode();
+                    return result;
+                } finally {
+                    rpcTracer.finishProcess(rpcCode);
+                }
             }
             throw new RemotingException(channel, "Unsupported request: " + message == null ? null : (message.getClass().getName() + ": " + message) + ", channel: consumer: " + channel.getRemoteAddress() + " --> provider: " + channel.getLocalAddress());
         }
@@ -157,6 +171,56 @@ public class DubboProtocol extends AbstractProtocol {
                 invocation.setAttachment(Constants.STUB_EVENT_KEY, Boolean.TRUE.toString());
             }
             return invocation;
+        }
+
+        /**
+         * 
+         * 
+         * @param channel
+         * @param invocation
+         * @param rpcTracer
+         * @return
+         */
+        private com.yunxi.common.tracer.context.RpcContext startProcessWithTracer(ExchangeChannel channel, Invocation invocation, com.yunxi.common.tracer.tracer.RpcTracer rpcTracer) {
+            String traceId = RpcContext.getContext().getAttachment(com.yunxi.common.tracer.constants.TracerConstants.TRACE_ID);
+            String rpcId = RpcContext.getContext().getAttachment(com.yunxi.common.tracer.constants.TracerConstants.RPC_ID);
+            
+            Map<String, String> tracerContext = null;
+            if (traceId != null && traceId.length() > 0 && rpcId != null && rpcId.length() > 0) {
+                tracerContext = new HashMap<String, String>();
+                tracerContext.put(com.yunxi.common.tracer.constants.TracerConstants.TRACE_ID, traceId);
+                tracerContext.put(com.yunxi.common.tracer.constants.TracerConstants.RPC_ID, rpcId);
+            }
+            
+            if (tracerContext != null) {
+                rpcTracer.setContext(tracerContext);
+            }
+            
+            com.yunxi.common.tracer.context.RpcContext rpcContext = rpcTracer.startProcess();
+            
+            if (rpcContext != null) {
+                rpcContext.setServiceName(invocation.getInvoker().getUrl().getServiceKey());
+                rpcContext.setMethodName(RpcUtils.getMethodName(invocation));
+                rpcContext.setTargetApp(invocation.getInvoker().getUrl().getParameter(Constants.APPLICATION_KEY));
+                rpcContext.setTargetIP(invocation.getInvoker().getUrl().getHost());
+                if (channel.getRemoteAddress() != null) { 
+                    InetAddress inetAddress = channel.getRemoteAddress().getAddress();
+                    if (inetAddress != null) {
+                        rpcContext.setCallIP(inetAddress.getHostAddress());
+                    }
+                }
+                rpcContext.setCurrentApp(invocation.getInvoker().getUrl().getParameter(Constants.APPLICATION_KEY));
+                rpcContext.setProtocol(invocation.getInvoker().getUrl().getProtocol());
+                    
+                if (RpcUtils.isOneway(invocation.getInvoker().getUrl(), invocation)) {
+                    rpcContext.setRpcType(com.yunxi.common.tracer.constants.RpcType.ONEWAY.getType());
+                } else if (RpcUtils.isAsync(invocation.getInvoker().getUrl(), invocation)) {
+                    rpcContext.setRpcType(com.yunxi.common.tracer.constants.RpcType.ASYNC.getType());
+                } else {
+                    rpcContext.setRpcType(com.yunxi.common.tracer.constants.RpcType.SYNC.getType());
+                }
+            }
+            return rpcContext;
         }
     };
     

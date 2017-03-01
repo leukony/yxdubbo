@@ -135,10 +135,8 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
     private com.yunxi.common.tracer.context.RpcContext startInvokeWithTracer(Invocation invocation, com.yunxi.common.tracer.tracer.RpcTracer rpcTracer) {
         com.yunxi.common.tracer.context.RpcContext rpcContext = rpcTracer.startInvoke();
         if (rpcContext != null) {
-            RpcContext.getContext().setAttachment(
-                com.yunxi.common.tracer.constants.TracerConstants.TRACE_ID, rpcContext.getTraceId());
-            RpcContext.getContext().setAttachment(
-                com.yunxi.common.tracer.constants.TracerConstants.RPC_ID, rpcContext.getRpcId());
+            RpcContext.getContext().setAttachment(com.yunxi.common.tracer.constants.TracerConstants.TRACE_ID, rpcContext.getTraceId());
+            RpcContext.getContext().setAttachment(com.yunxi.common.tracer.constants.TracerConstants.RPC_ID, rpcContext.getRpcId());
             
             rpcContext.setServiceName(getUrl().getServiceKey());
             rpcContext.setMethodName(RpcUtils.getMethodName(invocation));
