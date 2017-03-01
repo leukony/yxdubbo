@@ -143,7 +143,7 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
             rpcContext.setCallIP(NetUtils.getLocalHost());
             rpcContext.setCallApp(getUrl().getParameter(Constants.APPLICATION_KEY));
             rpcContext.setCurrentApp(getUrl().getParameter(Constants.APPLICATION_KEY));
-            rpcContext.setProtocol(getUrl().getProtocol());
+            rpcContext.setProtocol(Constants.DEFAULT_DIRECTORY);
                 
             if (RpcUtils.isOneway(getUrl(), invocation)) {
                 rpcContext.setRpcType(com.yunxi.common.tracer.constants.RpcType.ONEWAY.getType());
