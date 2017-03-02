@@ -18,6 +18,7 @@ package com.alibaba.dubbo.rpc.cluster.support;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.alibaba.dubbo.common.Constants;
@@ -135,6 +136,11 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
     private com.yunxi.common.tracer.context.RpcContext startInvokeWithTracer(Invocation invocation, com.yunxi.common.tracer.tracer.RpcTracer rpcTracer) {
         com.yunxi.common.tracer.context.RpcContext rpcContext = rpcTracer.startInvoke();
         if (rpcContext != null) {
+            Map<String, String> attachments = invocation.getAttachments();
+            if (attachments != null) {
+                attachments.remove(com.yunxi.common.tracer.constants.TracerConstants.TRACE_ID);
+                attachments.remove(com.yunxi.common.tracer.constants.TracerConstants.RPC_ID);
+            }
             RpcContext.getContext().setAttachment(com.yunxi.common.tracer.constants.TracerConstants.TRACE_ID, rpcContext.getTraceId());
             RpcContext.getContext().setAttachment(com.yunxi.common.tracer.constants.TracerConstants.RPC_ID, rpcContext.getRpcId());
             
