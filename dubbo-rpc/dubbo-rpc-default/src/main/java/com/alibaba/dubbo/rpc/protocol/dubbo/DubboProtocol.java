@@ -111,11 +111,11 @@ public class DubboProtocol extends AbstractProtocol {
                 RpcContext.getContext().setRemoteAddress(channel.getRemoteAddress());
                 
                 com.yunxi.common.tracer.tracer.RpcTracer rpcTracer = com.yunxi.common.tracer.TracerFactory.getRpcServerTracer();
-                String rpcCode = com.yunxi.common.tracer.constants.RpcCode.RPC_BIZ_FAILED.getCode();
+                String rpcCode = com.yunxi.common.lang.enums.RpcCode.RPC_BIZ_FAILED.getCode();
                 try {
                     startProcessWithTracer(channel, inv, invoker, rpcTracer);
                     Result result = invoker.invoke(inv);
-                    rpcCode = com.yunxi.common.tracer.constants.RpcCode.RPC_SUCCESS.getCode();
+                    rpcCode = com.yunxi.common.lang.enums.RpcCode.RPC_SUCCESS.getCode();
                     return result;
                 } finally {
                     rpcTracer.finishProcess(rpcCode);
@@ -214,11 +214,11 @@ public class DubboProtocol extends AbstractProtocol {
                 rpcContext.setProtocol(invoker.getUrl().getProtocol());
                     
                 if (RpcUtils.isOneway(invoker.getUrl(), invocation)) {
-                    rpcContext.setRpcType(com.yunxi.common.tracer.constants.RpcType.ONEWAY.getType());
+                    rpcContext.setRpcType(com.yunxi.common.lang.enums.RpcType.ONEWAY.getType());
                 } else if (RpcUtils.isAsync(invoker.getUrl(), invocation)) {
-                    rpcContext.setRpcType(com.yunxi.common.tracer.constants.RpcType.ASYNC.getType());
+                    rpcContext.setRpcType(com.yunxi.common.lang.enums.RpcType.ASYNC.getType());
                 } else {
-                    rpcContext.setRpcType(com.yunxi.common.tracer.constants.RpcType.SYNC.getType());
+                    rpcContext.setRpcType(com.yunxi.common.lang.enums.RpcType.SYNC.getType());
                 }
             }
             return rpcContext;

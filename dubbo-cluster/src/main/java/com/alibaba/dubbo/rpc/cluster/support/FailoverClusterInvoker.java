@@ -152,11 +152,11 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
             rpcContext.setProtocol(Constants.DEFAULT_DIRECTORY);
                 
             if (RpcUtils.isOneway(getUrl(), invocation)) {
-                rpcContext.setRpcType(com.yunxi.common.tracer.constants.RpcType.ONEWAY.getType());
+                rpcContext.setRpcType(com.yunxi.common.lang.enums.RpcType.ONEWAY.getType());
             } else if (RpcUtils.isAsync(getUrl(), invocation)) {
-                rpcContext.setRpcType(com.yunxi.common.tracer.constants.RpcType.ASYNC.getType());
+                rpcContext.setRpcType(com.yunxi.common.lang.enums.RpcType.ASYNC.getType());
             } else {
-                rpcContext.setRpcType(com.yunxi.common.tracer.constants.RpcType.SYNC.getType());
+                rpcContext.setRpcType(com.yunxi.common.lang.enums.RpcType.SYNC.getType());
             }
         }
         return rpcContext;
@@ -168,7 +168,7 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
      * @param rpcTracer
      */
     private void finishInvokeWithTracerOnSuccess(com.yunxi.common.tracer.tracer.RpcTracer rpcTracer) {
-        rpcTracer.finishInvoke(com.yunxi.common.tracer.constants.RpcCode.RPC_SUCCESS.getCode(), 
+        rpcTracer.finishInvoke(com.yunxi.common.lang.enums.RpcCode.RPC_SUCCESS.getCode(), 
             com.yunxi.common.tracer.context.RpcContext.class);
     }
     
@@ -180,13 +180,13 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
      */
     private void finishInvokeWithTracerOnException(RpcException e, com.yunxi.common.tracer.tracer.RpcTracer rpcTracer) {
         if (e.isNetwork()) {
-            rpcTracer.finishInvoke(com.yunxi.common.tracer.constants.RpcCode.RPC_NETWORK_FAILED.getCode(), 
+            rpcTracer.finishInvoke(com.yunxi.common.lang.enums.RpcCode.RPC_NETWORK_FAILED.getCode(), 
                 com.yunxi.common.tracer.context.RpcContext.class);
         } else if (e.isTimeout()) {
-            rpcTracer.finishInvoke(com.yunxi.common.tracer.constants.RpcCode.RPC_TIMEOUT_FAILED.getCode(), 
+            rpcTracer.finishInvoke(com.yunxi.common.lang.enums.RpcCode.RPC_TIMEOUT_FAILED.getCode(), 
                 com.yunxi.common.tracer.context.RpcContext.class);
         } else {
-            rpcTracer.finishInvoke(com.yunxi.common.tracer.constants.RpcCode.RPC_BIZ_FAILED.getCode(), 
+            rpcTracer.finishInvoke(com.yunxi.common.lang.enums.RpcCode.RPC_BIZ_FAILED.getCode(), 
                 com.yunxi.common.tracer.context.RpcContext.class);
         }
     }
