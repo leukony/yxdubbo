@@ -128,6 +128,8 @@
 		<skip_maven_deploy>false</skip_maven_deploy>
 		<updateReleaseInfo>true</updateReleaseInfo>
 		<project.build.sourceEncoding>${file_encoding}</project.build.sourceEncoding>
+		<java_source_version>1.7</java_source_version>
+        <java_target_version>1.7</java_target_version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
