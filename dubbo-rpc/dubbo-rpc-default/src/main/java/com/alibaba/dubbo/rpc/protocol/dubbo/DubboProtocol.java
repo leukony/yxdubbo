@@ -115,7 +115,9 @@ public class DubboProtocol extends AbstractProtocol {
                 try {
                     startProcessWithTracer(channel, inv, invoker, rpcTracer);
                     Result result = invoker.invoke(inv);
-                    rpcCode = com.yunxi.common.lang.enums.RpcCode.RPC_SUCCESS.getCode();
+                    if (!result.hasException()) {
+                        rpcCode = com.yunxi.common.lang.enums.RpcCode.RPC_SUCCESS.getCode();
+                    }
                     return result;
                 } finally {
                     rpcTracer.finishProcess(rpcCode);
